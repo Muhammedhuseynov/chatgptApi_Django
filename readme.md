@@ -1,6 +1,10 @@
 <summary>Install</summary>
 
 ```commandline
+git clone https://github.com/Muhammedhuseynov/chatgptApi_django
+
+cd chatgptApi_django
+
 pip install -r requirements.txt
 ```
 <summary>Run</summary>
