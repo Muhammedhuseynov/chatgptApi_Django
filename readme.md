@@ -6,6 +6,8 @@ pip install -r requirements.txt
 <summary>Run</summary>
 
 ```bash
+cd mygpt
+
 python manage.py runserver
 ```
 
