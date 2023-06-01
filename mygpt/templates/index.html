@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MyGpt</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding-bottom: 20px;
+    }
+    #chat-messages {
+      height: calc(100vh - 150px);
+      overflow-y: scroll;
+    }
+    .message {
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+    }
+  
+    .message-content {
+      font-weight: bold;
+    }
+  
+    .message-time {
+      font-size: 0.8em;
+      color: #888;
+      text-align: right; /* Align the message time to the right */
+    }
+    
+    .sender {
+      background-color: #58a0d8;
+      color: #fff;
+    }
+    
+    .receiver {
+      background-color: #f2f2f2;
+    }
+    
+    #loading-container {
+      display: none;
+      margin-top: 10px;
+     
+    }
+    
+    .loading-dots::after {
+      content: '';
+      display: inline-block;
+      animation: loading 1s infinite;
+      color: red;
+      font-size: 50px;
+      
+    }
+    
+    @keyframes loading {
+      0% { content: '.'; }
+      33% { content: '..'; }
+      66% { content: '...'; }
+    }
+    h1{
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <center><h1>
+    MyGPT
+  </h1></center>
+  <div class="container">
+    <div id="chat-messages">
+      <!-- msgs -->
+    </div>
+    <div id="loading-container" class="text-center">
+      <div class="loading-dots"></div>
+    </div>
+    <div class="row justify-content-center mt-4">
+      <div class="col-md-6">
+        <form id="chat-form" class="d-flex"  method="po">
+          {% csrf_token %}
+          <input type="text" id="message-input" placeholder="Type your message..." class="form-control">
+          <button type="submit" class="btn btn-primary ml-2">Send</button>
+        </form>
+      </div>
+    </div>
+    
+  </div>
+  
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+  <script>
+  
+document.getElementById("chat-form").addEventListener("submit", function(event) {
+  event.preventDefault();
+
+  var messageInput = document.getElementById("message-input");
+  var message = messageInput.value.trim(); 
+
+  if (message !== "") {
+    var chatMessages = document.getElementById("chat-messages");
+    
+
+    var senderMessageElement = document.createElement("div");
+    senderMessageElement.className = "message sender";
+
+
+    var senderMessageContent = document.createElement("div");
+    senderMessageContent.className = "message-content";
+    senderMessageContent.textContent = message;
+
+
+    var senderMessageTime = document.createElement("div");
+    senderMessageTime.className = "message-time";
+    var currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    senderMessageTime.textContent = currentTime;
+
+    
+    senderMessageElement.appendChild(senderMessageContent);
+    senderMessageElement.appendChild(senderMessageTime);
+
+    chatMessages.appendChild(senderMessageElement);
+
+    
+    messageInput.value = "";
+
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    var loadingContainer = document.createElement("div");
+    loadingContainer.className = "message receiver";
+    var loadingElement = document.createElement("div");
+    loadingElement.className = "loading-container";
+    var loadingDots = document.createElement("span");
+    loadingDots.className = "loading-dots";
+    loadingDots.textContent = "";
+    loadingElement.appendChild(loadingDots);
+    loadingContainer.appendChild(loadingElement);
+
+    chatMessages.appendChild(loadingContainer);
+
+  
+    var xhr = new XMLHttpRequest();
+    var csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
+
+    xhr.open("POST", "{% url 'gpt' %}");
+    xhr.setRequestHeader("X-CSRFToken", csrfToken);
+    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === XMLHttpRequest.DONE) {
+      
+        chatMessages.removeChild(loadingContainer);
+
+        if (xhr.status === 200) {
+          var response = JSON.parse(xhr.responseText);
+          var receivedMessage = response.message;
+
+          if (receivedMessage) {
+            
+            var receivedMessageElement = document.createElement("div");
+            receivedMessageElement.className = "message receiver";
+
+            var receivedMessageContent = document.createElement("div");
+            receivedMessageContent.className = "message-content";
+            receivedMessageContent.textContent = receivedMessage;
+
+
+            var receivedMessageTime = document.createElement("div");
+            receivedMessageTime.className = "message-time";
+            var currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            receivedMessageTime.textContent = currentTime;
+
+            receivedMessageElement.appendChild(receivedMessageContent);
+            receivedMessageElement.appendChild(receivedMessageTime);
+
+            chatMessages.appendChild(receivedMessageElement);
+
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+          } else {
+            console.log("No message received");
+          }
+        } else {
+          console.error("Request failed with status:", xhr.status);
+        }
+      }
+    };
+    var payload = "userinp=" + encodeURIComponent(message);
+
+    // Send the POST request
+    xhr.send(payload);
+  }
+});
+
+  </script>
+</body>
+</html>
